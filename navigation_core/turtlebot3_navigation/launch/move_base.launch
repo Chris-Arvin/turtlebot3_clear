@@ -1,0 +1,45 @@
+<launch>
+  <!-- Arguments -->
+  <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="cmd_vel_topic" default="/cmd_vel" />
+  <arg name="odom_topic" default="odom" />
+  <arg name="move_forward_only" default="false"/>
+
+  <!-- move_base -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <!-- 局部路径规划/控制算法-->
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+
+    <!-- 全局路径规划 -->
+    <!-- 动力空间搜索的dijkstra-->
+    <param name="base_global_planner" value="navfn/NavfnROS" />
+
+    <!-- 调用c++的combined-RRT-->
+    <!--<param name="base_global_planner" value="rrt_planner/RRTPlanner" />-->
+
+    <!-- 调用python脚本，进行RRT + minimum_snap。需要额外启动roslaunch global_py_api smooth_rrt.launch-->
+    <!--<param name="base_global_planner" value="api_planner/APIPlanner" />-->
+    
+
+    <rosparam file="$(find turtlebot3_navigation)/param/costmap_common_params_$(arg model).yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find turtlebot3_navigation)/param/costmap_common_params_$(arg model).yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find turtlebot3_navigation)/param/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find turtlebot3_navigation)/param/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find turtlebot3_navigation)/param/move_base_params.yaml" command="load" />
+    <rosparam file="$(find turtlebot3_navigation)/param/dwa_local_planner_params_$(arg model).yaml" command="load" />
+    <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+    <remap from="odom" to="$(arg odom_topic)"/>
+    <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
+  </node>
+</launch>
+
+
+<!-- 
+参考：https://www.cnblogs.com/flyinggod/p/9079500.html
+全局/局部规划的模板在nav_core，里面有三个虚函数，规范接口。
+全局：navfn里面封装了一个可以用的NavfnROS，后来又有人做了个global_planner的包，封装了一些其他的算法，但是效果不太好.
+      注意：本来carrot_planner也是别人写的包，但是因为没写完，所以改成自己的了。
+局部：有一个dwa（动态窗口法），还有一个base_local_planne里面的TrajectoryROS（航迹推算法）
+恢复：
+
+-->
