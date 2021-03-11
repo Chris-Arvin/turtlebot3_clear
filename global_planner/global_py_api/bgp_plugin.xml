@@ -1,0 +1,7 @@
+<library path="lib/libglobal_py_api">
+  <class name="api_planner/APIPlanner" type="api_planner::APIPlanner" base_class_type="nav_core::BaseGlobalPlanner">
+    <description>
+      A simple planner that seeks to place a legal rrt alogrithm in-front of the robot
+    </description>
+  </class>
+</library>

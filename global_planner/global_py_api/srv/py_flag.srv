@@ -1,0 +1,14 @@
+# 写src文件时，一定要在cmakelist的generate_message和catkin_package中写清楚srv依赖的package，在xml文件中写两个build和一个exec
+# 例如在这个srv里面就要在gen..中写上std_msgs（其实这个是标准），在catkin和build及exec中写上geometry_msgs
+# 等等。。为啥我没加nav_msgs他却不报错呀。。
+
+# 这里对上面的疑问进行解答：
+# 1.find_package是说，如果想编译本package，必须保证存在find_package里面的功能包已经被安装了（可以通过rosdep安装）。
+# 但是！如果没在这写，但是调用了，只要自己电脑有，就没事！这个相当于是加了个保险！
+# 2.catkin，build和exec都是针对cpp文件的，与py文件和msg啥的无关！
+
+geometry_msgs/PoseStamped start		#起始点
+geometry_msgs/PoseStamped goal		#目标点
+nav_msgs/OccupancyGrid map      #地图
+---
+nav_msgs/Path path

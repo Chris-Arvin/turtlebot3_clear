@@ -1,0 +1,4 @@
+<!-- 注意，launch python脚本前记得先给执行权限(x)-->
+<launch>
+  <node pkg="global_py_api" type="listener.py" name="listener" output="screen"/>
+</launch>

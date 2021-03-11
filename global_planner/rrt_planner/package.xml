@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>rrt_planner</name>
+  <version>0.0.0</version>
+  <description>The rrt_planner package</description>
+  <license>TODO</license>
+  <author email="1711506@mail.nankai.edu.cn">Arvin</author> 
+  <maintainer email="1711506@mail.nankai.edu.cn">Arvin</maintainer>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>tf2_geometry_msgs</build_depend>
+
+  <depend>base_local_planner</depend>
+  <depend>costmap_2d</depend>
+  <depend>eigen</depend>
+  <depend>nav_core</depend>
+  <depend>pluginlib</depend>
+  <depend>roscpp</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+
+
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+     <nav_core plugin="${prefix}/bgp_plugin.xml"/>
+
+  </export>
+</package>
