@@ -1,0 +1,57 @@
+<launch>
+  <!-- Arguments -->
+  <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="map_file" default="$(find turtlebot3_navigation)/maps/map.yaml"/>
+  <arg name="open_rviz" default="true"/>
+  <arg name="move_forward_only" default="false"/>
+
+  <!-- Turtlebot3 -->
+  <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+    <arg name="model" value="$(arg model)" />
+  </include>
+
+  <!-- Map server -->
+  <!-- 是ros内置的一个节点，三元占用值：空闲(0)，已占用(100)，未知(-1) -->
+  <!-- 
+  发送的topic为：map_metadata (nav_msgs/MapMetaData)  Receive the map metadata via this latched topic. metadata是元数据的意思
+               map (nav_msgs/OccupancyGrid)  Receive the map via this latched topic.
+  -->
+  <!-- 
+  发送的是map.yaml这个文件
+  必填：
+  image(发的是局部地图还是全局呀？) : Path to the image file containing the occupancy data; can be absolute, or relative to the location of the YAML file
+  resolution : Resolution of the map, meters / pixel
+  origin : 原点（左下角坐标系）（是ｍｅｔｅｒ地图，不是ｐｉｘｅｌ地图）
+  occupied_thresh : 大于该（概率）阈值，则被视为占用
+  free_thresh : 小于该（概率）阈值，则被视为空闲
+  negate : 是否取反　Whether the white/black free/occupied semantics should be reversed (interpretation of thresholds is unaffected)
+  可选参数：
+  mode : 三进制，小数，原始值，三选一　Can have one of three values: trinary, scale, or raw. Trinary is the default. More information on how this changes the value interpretation is in the next section.
+  -->
+  <!-- costmap相关。https://blog.csdn.net/datase/article/details/82901183
+  一共有四个层：Master【用于加和其他三个】,static layer【用来储存静态障碍物(之前通过slam建的？)】,obstacles【用于储存动态障碍物（传感器获得的）】,inflation【用于膨胀】
+  工作流程：首先是初始化三个空白图(inflation不用)，确定用来updatebound（一个矩形），先把static layer里的东西（障碍物）加到Master，之后加入obstacle layer的，最后膨胀（对master）；然后重新选bound,重复。
+  
+  具体介绍：
+  static:里面有一个参数rolling，如果false的话，就是最开始static自己的bound是整个地图，只更新一次，后面就没他事了；如果是true的话，他会和obstale layer一样，一块一块的去更新
+  obstacle:首先确定传感器到障碍物的距离(这距离内都是free space，而且需要检测是否超出了bound的距离)，将障碍物放入observation队列，更新机器人当前位置，从队列中拿障碍物更新机器人。
+  -->
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
+
+  <!-- AMCL -->
+  <!-- AMCl是一个概率定位系统，在gazebo中，机器人附近的绿色粒子云就是它产生的-->
+  <!-- amcl节点接收laser-based地图，激光扫描和tf变换信息，并且输出位姿评估 -->
+  <include file="$(find turtlebot3_navigation)/launch/amcl.launch"/>
+
+  <!-- move_base -->
+  <include file="$(find turtlebot3_navigation)/launch/move_base.launch">
+    <arg name="model" value="$(arg model)" />
+    <arg name="move_forward_only" value="$(arg move_forward_only)"/>
+  </include>
+
+  <!-- rviz -->
+  <group if="$(arg open_rviz)"> 
+    <node pkg="rviz" type="rviz" name="rviz" required="true"
+          args="-d $(find turtlebot3_navigation)/rviz/turtlebot3_navigation.rviz"/>
+  </group>
+</launch>

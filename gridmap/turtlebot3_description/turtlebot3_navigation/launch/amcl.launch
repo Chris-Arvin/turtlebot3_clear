@@ -1,0 +1,81 @@
+  <!-- AMCl是一个概率定位系统，在gazebo中，机器人附近的绿色粒子云就是它产生的-->
+  <!-- amcl节点接收laser-based地图，激光扫描和tf变换信息，并且输出位姿评估 -->
+  <!-- Subscribed Topics: scan ([sensor_msgs/LaserScan][2])　激光扫描得到的信息, 
+                          tf ([tf/tfMessage][3]) 　位姿变换（是lazer的？）, 
+                          initialpose ([geometry_msgs/PoseWithCovarianceStamped][4])　初始xyztheta位姿, 用来初始化粒子滤波器的均值和协方差，
+                          map ([nav_msgs/OccupancyGrid][5]) 　整个地图。当设置use_map_topic参数时，AMCL会订阅此话题来获取用于laser-based定位的地图。
+  -->
+
+  <!-- Published Topics: amcl_pose ([geometry_msgs/PoseWithCovarianceStamped][6]) 机器人在地图上的带有协方差的预估位姿, 
+                        　particlecloud ([geometry_msgs/PoseArray][7])粒子滤波器维护的预估位姿集合，
+                        　tf ([tf/tfMessage][8]) 发布里程（可以通过~odom_frame_id参数重新映射）到地图的变换。                     
+  -->
+
+  <!-- Service: global_localization ([std_srvs/Empty][9]) 初始化全局定位，其中所有粒子随机分布在地图中的自由空间中。
+                request_nomotion_update ([std_srvs/Empty][10])  用于手动执行更新和发布更新的粒子。
+  -->
+
+  <!-- Service Called: static_map ([nav_msgs/GetMap][11]) amcl调用此服务来获取laser-based定位的地图; 从该服务获取地图的启动模块。
+  -->
+
+  <!-- ROS参数可以使用三种类型来配置amcl节点：verall filter, laser model, 和 odometery model。 -->
+
+<launch>
+  <!-- Arguments -->
+  <arg name="scan_topic"     default="scan"/>
+  <arg name="initial_pose_x" default="0.0"/>
+  <arg name="initial_pose_y" default="0.0"/>
+  <arg name="initial_pose_a" default="0.0"/>
+
+  <!-- AMCL -->
+  <node pkg="amcl" type="amcl" name="amcl">
+
+    <!-- 允许的最多和最少粒子数　-->
+    <param name="min_particles"             value="500"/>
+    <param name="max_particles"             value="3000"/>
+    <!-- 实际分布与估计分布之间的最大误差 -->
+    <param name="kld_err"                   value="0.02"/>
+    <!-- 执行更新过滤器操作之前需要进行的平移和旋转运动 -->
+    <param name="update_min_d"              value="0.20"/>
+    <param name="update_min_a"              value="0.20"/>
+    <!-- 重新采样前需要的滤波器到更新次数 -->
+    <param name="resample_interval"         value="1"/>
+
+    <param name="transform_tolerance"       value="0.5"/>
+    <!-- slow/fast average weight滤波器的指数衰减率，用于决定何时通过添加随机位姿进行恢复 -->
+    <param name="recovery_alpha_slow"       value="0.00"/>
+    <param name="recovery_alpha_fast"       value="0.00"/>
+    <!-- 初始位姿mean（x/y/a），用于初始化高斯分布的滤波器 -->
+    <param name="initial_pose_x"            value="$(arg initial_pose_x)"/>
+    <param name="initial_pose_y"            value="$(arg initial_pose_y)"/>
+    <param name="initial_pose_a"            value="$(arg initial_pose_a)"/>
+    <!-- 指定最大可用多大速率(Hz)扫描并发布用于可视化的路径.若设置为-1.0，则表示为禁用 -->
+    <param name="gui_publish_rate"          value="50.0"/>
+
+    <remap from="scan"                      to="$(arg scan_topic)"/>
+    <param name="laser_max_range"           value="3.5"/>
+    <param name="laser_max_beams"           value="180"/>
+    <param name="laser_z_hit"               value="0.5"/>
+    <param name="laser_z_short"             value="0.05"/>
+    <param name="laser_z_max"               value="0.05"/>
+    <param name="laser_z_rand"              value="0.5"/>
+    <param name="laser_sigma_hit"           value="0.2"/>
+    <param name="laser_lambda_short"        value="0.1"/>
+    <param name="laser_likelihood_max_dist" value="2.0"/>
+    <param name="laser_model_type"          value="likelihood_field"/>
+
+    <!-- odometry model parameter-->
+    <!-- 需要使用哪个模型，either "diff", "omni", "diff-corrected" or "omni-corrected" -->
+    <param name="odom_model_type"           value="diff"/>
+    <!-- 基于机器人运动旋转分量，来指定里程旋转估计中预期的噪声 -->
+    <param name="odom_alpha1"               value="0.1"/>
+    <param name="odom_alpha2"               value="0.1"/>
+    <param name="odom_alpha3"               value="0.1"/>
+    <param name="odom_alpha4"               value="0.1"/>
+    <!-- 里程计使用的坐标系 -->
+    <param name="odom_frame_id"             value="odom"/>
+    <!-- 移动基座使用的坐标系 -->
+    <param name="base_frame_id"             value="base_footprint"/>
+
+  </node>
+</launch>
